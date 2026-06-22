@@ -2,13 +2,13 @@ public with sharing class OrderTriggerHandler {
 
     public static void run() {
         if (Trigger.isAfter && Trigger.isInsert) {
-            handleAfterInsert(Trigger.new);
+            handleAfterInsert((List<Order>) Trigger.new);
         } else if (Trigger.isAfter && Trigger.isUpdate) {
-            handleAfterUpdate(Trigger.new, Trigger.oldMap);
+            handleAfterUpdate((List<Order>) Trigger.new, (Map<Id, Order>) Trigger.oldMap);
         } else if (Trigger.isAfter && Trigger.isDelete) {
-            handleAfterDelete(Trigger.old);
+            handleAfterDelete((List<Order>) Trigger.old);
         } else if (Trigger.isAfter && Trigger.isUndelete) {
-            handleAfterInsert(Trigger.new);
+            handleAfterInsert((List<Order>) Trigger.new);
         }
     }
 
