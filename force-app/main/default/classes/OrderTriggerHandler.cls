@@ -33,10 +33,13 @@ public with sharing class OrderTriggerHandler {
 
             if (newOrder.AccountId != null
                 && (statusChanged
-                    || (amountChanged && newOrder.Status == AccountCAService.ACTIVATED_STATUS))) {
+                    || ((accountChanged || amountChanged)
+                        && newOrder.Status == AccountCAService.ACTIVATED_STATUS))) {
                 accountIds.add(newOrder.AccountId);
             }
-            if (accountChanged && oldOrder.AccountId != null) {
+            if (accountChanged
+                && oldOrder.AccountId != null
+                && oldOrder.Status == AccountCAService.ACTIVATED_STATUS) {
                 accountIds.add(oldOrder.AccountId);
             }
         }
