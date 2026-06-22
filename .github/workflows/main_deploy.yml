@@ -27,7 +27,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [20.x]
 
     steps:
       - name: Checkout
@@ -48,7 +48,7 @@ jobs:
 
       - name: Authenticate to Salesforce (JWT)
         run: |
-          echo "${{ secrets.SF_JWT_KEY }}" > server.key
+          echo "${{ secrets.SF_JWT_KEY }}" | base64 -d > server.key
           sf org login jwt \
             --client-id "${{ secrets.SF_CONSUMER_KEY }}" \
             --jwt-key-file server.key \
@@ -65,7 +65,8 @@ jobs:
             --from "origin/main" \
             --output delta/ \
             --generate-delta \
-            --source force-app
+            --source force-app \
+            --repo .
           echo "=== Contenu du delta package.xml ==="
           if [ -f delta/package/package.xml ]; then
             cat delta/package/package.xml
@@ -78,7 +79,6 @@ jobs:
         run: |
           if [ -f delta/package/package.xml ]; then
             sf project deploy validate \
-              --manifest delta/package/package.xml \
               --source-dir delta/force-app \
               --test-level RunLocalTests \
               --wait 30
@@ -91,7 +91,6 @@ jobs:
         run: |
           if [ -f delta/package/package.xml ]; then
             sf project deploy start \
-              --manifest delta/package/package.xml \
               --source-dir delta/force-app \
               --test-level RunLocalTests \
               --wait 30
