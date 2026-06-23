@@ -52,23 +52,26 @@ private class OrderTriggerHandlerTest {
     }
 
     @isTest
-    static void deleteActivatedOrder_recalculatesAccountCA() {
-        Account acc = TestDataFactory.createAccount('Acc Delete');
+    static void deleteDraftOrder_doesNotAffectCA() {
+        Account acc = TestDataFactory.createAccount('Acc Delete Draft');
         Id pbId = Test.getStandardPricebookId();
         PricebookEntry pbe = getPbe();
 
-        Order o = TestDataFactory.createOrder(acc.Id, pbId, TestDataFactory.STATUS_DRAFT);
-        TestDataFactory.createOrderItem(o.Id, pbe.Id, 3, 100);
-        o.Status = TestDataFactory.STATUS_ACTIVATED;
-        update o;
+        Order activated = TestDataFactory.createOrder(acc.Id, pbId, TestDataFactory.STATUS_DRAFT);
+        TestDataFactory.createOrderItem(activated.Id, pbe.Id, 1, 100);
+        activated.Status = TestDataFactory.STATUS_ACTIVATED;
+        update activated;
+
+        Order draft = TestDataFactory.createOrder(acc.Id, pbId, TestDataFactory.STATUS_DRAFT);
+        TestDataFactory.createOrderItem(draft.Id, pbe.Id, 5, 100);
 
         Test.startTest();
-        delete o;
+        delete draft;
         Test.stopTest();
 
         Account refreshed = [SELECT Chiffre_d_affaire__c FROM Account WHERE Id = :acc.Id];
-        System.assertEquals(0, refreshed.Chiffre_d_affaire__c,
-            'CA doit etre recalcule apres delete d\'une commande Activated');
+        System.assertEquals(100, refreshed.Chiffre_d_affaire__c,
+            'CA doit rester a 100 : le delete d\'une Draft ne doit pas declencher de recalcul');
     }
 
     @isTest
@@ -93,7 +96,7 @@ private class OrderTriggerHandlerTest {
     }
 
     @isTest
-    static void changeAccountOnActivatedOrder_recalculatesBoth() {
+    static void changeAccountBeforeActivation_updatesCorrectAccount() {
         Account accOld = TestDataFactory.createAccount('Old Acc');
         Account accNew = TestDataFactory.createAccount('New Acc');
         Id pbId = Test.getStandardPricebookId();
@@ -101,11 +104,11 @@ private class OrderTriggerHandlerTest {
 
         Order o = TestDataFactory.createOrder(accOld.Id, pbId, TestDataFactory.STATUS_DRAFT);
         TestDataFactory.createOrderItem(o.Id, pbe.Id, 1, 100);
-        o.Status = TestDataFactory.STATUS_ACTIVATED;
-        update o;
 
         Test.startTest();
         o.AccountId = accNew.Id;
+        update o;
+        o.Status = TestDataFactory.STATUS_ACTIVATED;
         update o;
         Test.stopTest();
 
@@ -114,10 +117,10 @@ private class OrderTriggerHandlerTest {
             FROM Account
             WHERE Id IN :new Set<Id>{ accOld.Id, accNew.Id }
         ]);
-        System.assertEquals(0, refreshed.get(accOld.Id).Chiffre_d_affaire__c,
-            'Ancien compte doit avoir un CA de 0');
+        System.assertEquals(null, refreshed.get(accOld.Id).Chiffre_d_affaire__c,
+            'Ancien compte ne doit jamais avoir ete recalcule (CA reste null)');
         System.assertEquals(100, refreshed.get(accNew.Id).Chiffre_d_affaire__c,
-            'Nouveau compte doit recevoir le montant');
+            'Nouveau compte doit recevoir le CA apres activation');
     }
 
     @isTest
