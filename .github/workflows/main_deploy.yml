@@ -60,9 +60,15 @@ jobs:
       - name: Generate metadata delta package
         run: |
           mkdir -p delta
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            FROM_REF="origin/main"
+          else
+            FROM_REF="HEAD~1"
+          fi
+          echo "Comparaison delta depuis : $FROM_REF"
           sgd source delta \
             --to HEAD \
-            --from "origin/main" \
+            --from "$FROM_REF" \
             --output delta/ \
             --generate-delta \
             --source force-app \
@@ -73,11 +79,17 @@ jobs:
           else
             echo "Aucun delta détecté."
           fi
+          echo "=== Contenu du dossier delta/force-app ==="
+          if [ -d delta/force-app ]; then
+            ls -R delta/force-app
+          else
+            echo "Aucun fichier source dans le delta."
+          fi
 
       - name: Validate deployment (PR only)
         if: github.event_name == 'pull_request'
         run: |
-          if [ -f delta/package/package.xml ]; then
+          if [ -d delta/force-app ]; then
             sf project deploy validate \
               --source-dir delta/force-app \
               --test-level RunLocalTests \
@@ -89,7 +101,7 @@ jobs:
       - name: Deploy to Salesforce (push to main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          if [ -f delta/package/package.xml ]; then
+          if [ -d delta/force-app ]; then
             sf project deploy start \
               --source-dir delta/force-app \
               --test-level RunLocalTests \
