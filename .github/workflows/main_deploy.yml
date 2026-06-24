@@ -8,7 +8,7 @@ name: Deploy and Validate Metadata
 # (Settings > Secrets and variables > Actions) :
 #   SF_CONSUMER_KEY  : Consumer Key de la Connected App Salesforce
 #   SF_USERNAME      : email du user Salesforce utilisé pour le déploiement
-#   SF_JWT_KEY       : contenu de la clé privée RSA (server.key, format PEM)
+#   SF_JWT_KEY       : contenu de la clé privée RSA (server.key, format PEM encodé en base64)
 #   SF_INSTANCE_URL  : https://login.salesforce.com (prod / dev edition)
 #                      ou https://test.salesforce.com (sandbox)
 
